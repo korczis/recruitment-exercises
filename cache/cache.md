@@ -2,7 +2,9 @@
 
 Spec v1 (2022-03-30)
 
-The challenge is to implement a periodic self-rehydrating cache. The cache must be able to register 0-arity functions (each under a new key) that will recompute periodically and store their results in the cache for fast-access instead of being called every time the values are needed.
+The challenge is to implement a periodic self-rehydrating cache.
+
+
 
 ## Requirements and context for the exercise
 
@@ -22,3 +24,87 @@ In addition, your code must be thoroughly tested and documented. The data must b
 
 We provide a code skeleton to get you started on the exercise: [`cache.ex`](./cache.ex).
 
+## Flow overview
+
+```
++--------------+                             +-------------------+
+| Querying     |                             | Cache             |
+| Client       |                             |                   |
++--------------+                             +-------------------+
+       |                                            |
+       |                                            |
+       |  +--------------+       +--------------+   |
+       +---| Checks cache |----->| Checks TTL   |   |
+           +--------------+      +--------------+   |
+           |       |                            |   |
+           |       |                            |   |
+           |       |                            |   |
+           |       |   +----------------+       |   |
+           |       |---| Returns cached | <-----+   |
+           |       |   | data           |           |
+           |       |   +----------------+           |
+           |       |                                |
+           |       +--------------------------------+
+           |
+           |                            |
+           |  +----------------+        |
+           +--| Calls function |        |
+              +----------------+        |
+               |       |                |
+               |       |                |
+               |       |                |
+               |       |   +----------------+
+               |       |---| Updates cache  |
+               |           | with result    |
+               |           +----------------+
+               |
+               +-------------------------------+
+```
+
+## Flow top - bottom
+
+```
+      +------------------------------------+
+      |  Cache Mechanism                   |
+      +------------------------------------+
+             |
+             | Register 0-arity function
+             v
+      +------------------------------------+
+      |  +-------------------------+      |
+      |  |  Function with key      |      |
+      |  +-------------------------+      |
+      |  |  Recompute periodically |      |
+      |  |  Store results in cache |      |
+      |  +-------------------------+      |
+      |                                   |
+      |  ttl = 1 hour                     |
+      |  refresh_interval = 10 minutes    |
+      |                                   |
+      +-----------------------------------+
+             |
+             |
+             v
+      +------------------------------------+
+      |  Querying Client                   |
+      +------------------------------------+
+             |
+             | Check cache for value
+             v
+      +-------------------------+
+      |  +-------------------+  |
+      |  |  Result in cache  |  |
+      |  +-------------------+  |
+      |  |   Provide value   |  |
+      |  +-------------------+  |
+      |  |       OR             |
+      |  +-------------------+  |
+      |  |  Compute function |  |
+      |  +-------------------+  |
+      |  |  Store result     |  |
+      |  +-------------------+  |
+      |  |   Provide value   |  |
+      |  +-------------------+  |
+      +-------------------------+
+
+```
